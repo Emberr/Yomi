@@ -1,6 +1,20 @@
-FROM alpine:3.20
+FROM python:3.12-slim
 
-LABEL org.opencontainers.image.title="Yomi backend placeholder"
-LABEL org.opencontainers.image.description="Phase 0 placeholder; FastAPI is not implemented yet."
+LABEL org.opencontainers.image.title="Yomi backend"
+LABEL org.opencontainers.image.description="FastAPI backend for Yomi."
 
-CMD ["sh", "-c", "printf '%s\n' 'Yomi backend placeholder: FastAPI is not implemented in Phase 0.' && tail -f /dev/null"]
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+
+WORKDIR /app
+
+COPY pyproject.toml ./
+COPY yomi ./yomi
+COPY tests ./tests
+
+RUN pip install --no-cache-dir --upgrade pip \
+  && pip install --no-cache-dir ".[test]"
+
+EXPOSE 8000
+
+CMD ["uvicorn", "yomi.main:app", "--host", "0.0.0.0", "--port", "8000"]
