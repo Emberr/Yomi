@@ -1,6 +1,19 @@
-FROM alpine:3.20
+FROM node:22-alpine
 
-LABEL org.opencontainers.image.title="Yomi frontend placeholder"
-LABEL org.opencontainers.image.description="Phase 0 placeholder; Next.js is not implemented yet."
+LABEL org.opencontainers.image.title="Yomi frontend"
+LABEL org.opencontainers.image.description="Next.js frontend for Yomi."
 
-CMD ["sh", "-c", "printf '%s\n' 'Yomi frontend placeholder: Next.js is not implemented in Phase 0.' && tail -f /dev/null"]
+WORKDIR /app
+
+COPY package.json package-lock.json ./
+RUN npm ci
+
+COPY next-env.d.ts next.config.ts tsconfig.json eslint.config.mjs ./
+COPY public ./public
+COPY src ./src
+
+RUN npm run build
+
+EXPOSE 3000
+
+CMD ["npm", "run", "start"]
