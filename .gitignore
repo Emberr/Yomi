@@ -1,0 +1,38 @@
+# Local system files
+.DS_Store
+
+# Local environment and secrets
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.venv/
+venv/
+
+# Node
+node_modules/
+.next/
+out/
+dist/
+coverage/
+
+# Docker and local data
+data/
+*.db
+*.db-shm
+*.db-wal
+
+# Build artifacts
+build/
+tmp/
+temp/
+
+# Local AI scratch files; committed repo docs remain trackable.
+.codex/
+.agents/
