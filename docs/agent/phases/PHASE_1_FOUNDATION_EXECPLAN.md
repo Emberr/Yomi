@@ -109,4 +109,4 @@ If ports differ, update this file and README.
 
 ## Decision log
 
-Record implementation decisions here.
+- Local Python validation prefers `uv` commands because the host may not provide a `python` executable. Use `python3` only as a local fallback, and use `docker compose run --rm backend python -m pytest` as the container source of truth.

@@ -13,6 +13,22 @@ Run these whenever they exist:
 
 If a target does not exist yet, the current phase should either create it or explicitly record why it is deferred.
 
+## Python local checks
+
+Prefer `uv` for host-side Python commands because a `python` executable may not exist on developer machines:
+
+- `uv run pytest`
+- `uv run python -m compileall yomi tests`
+
+If `uv` is unavailable, use:
+
+- `python3 -m pytest`
+- `python3 -m compileall yomi tests`
+
+Container validation remains valid source of truth:
+
+- `docker compose run --rm backend python -m pytest`
+
 ## Phase gates
 
 | Phase | Required validation |

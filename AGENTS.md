@@ -74,10 +74,14 @@ If a command cannot be implemented yet, create a stub that fails clearly and upd
 Use the narrowest relevant checks during work, then run the phase gate before declaring a phase complete. Preferred checks once available:
 
 - `docker compose config`
-- backend tests: `pytest` or project-specific equivalent
+- backend local Python checks: prefer `uv run pytest` and `uv run python -m compileall yomi tests`
+- if `uv` is unavailable locally, fall back to `python3 -m pytest` and `python3 -m compileall yomi tests`
+- container backend tests remain valid source of truth: `docker compose run --rm backend python -m pytest`
 - frontend checks: typecheck, lint, unit tests if configured
 - migration/smoke tests for database changes
 - security-specific tests for auth, CSRF, session, crypto, and user scoping
+
+Do not require a host `python` binary; some supported developer machines only expose `python3`.
 
 Do not claim a phase is complete unless the phase ExecPlan's “Done when” and “Verification gate” sections are satisfied.
 
