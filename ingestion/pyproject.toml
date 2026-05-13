@@ -1,0 +1,16 @@
+[project]
+name = "yomi-ingestion"
+version = "0.1.0"
+description = "Yomi content database ingestion scaffold"
+requires-python = ">=3.12"
+license = { text = "AGPL-3.0-or-later" }
+
+[dependency-groups]
+dev = [
+  "pytest>=8.0,<9.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+

@@ -1,6 +1,13 @@
-FROM alpine:3.20
+FROM python:3.12-slim
 
-LABEL org.opencontainers.image.title="Yomi ingestion placeholder"
-LABEL org.opencontainers.image.description="Phase 0 placeholder; content ingestion is not implemented yet."
+LABEL org.opencontainers.image.title="Yomi ingestion"
+LABEL org.opencontainers.image.description="Content database initialization scaffold for Yomi."
 
-CMD ["sh", "-c", "printf '%s\n' 'Yomi ingestion placeholder: content ingestion is not implemented in Phase 0.' && exit 1"]
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+
+WORKDIR /app
+
+COPY ingest.py ./ingest.py
+
+CMD ["python", "ingest.py"]
