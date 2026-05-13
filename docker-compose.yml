@@ -1,2 +1,55 @@
-# Phase 0 placeholder.
-# Compose services are intentionally deferred to milestone M0.3.
+services:
+  nginx:
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
+    container_name: yomi_nginx
+    ports:
+      - "${YOMI_HTTP_PORT:-8888}:80"
+    depends_on:
+      - frontend
+      - backend
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: yomi_frontend
+    environment:
+      NEXT_PUBLIC_API_BASE: /api
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: yomi_backend
+    environment:
+      DB_CONTENT_PATH: /data/content.db
+      DB_USER_PATH: /data/user.db
+      YOMI_BEHIND_HTTPS: ${YOMI_BEHIND_HTTPS:-false}
+      YOMI_BASE_URL: ${YOMI_BASE_URL:-http://localhost:8888}
+      YOMI_SESSION_SECRET: ${YOMI_SESSION_SECRET:-phase0-placeholder-not-for-production}
+      YOMI_LOG_LEVEL: ${YOMI_LOG_LEVEL:-INFO}
+    volumes:
+      - yomi_data:/data
+    restart: unless-stopped
+
+  ingestion:
+    build:
+      context: ./ingestion
+      dockerfile: Dockerfile
+    container_name: yomi_ingestion
+    environment:
+      DB_CONTENT_PATH: /data/content.db
+    volumes:
+      - yomi_data:/data
+    profiles:
+      - tools
+
+volumes:
+  yomi_data:
+    driver: local
