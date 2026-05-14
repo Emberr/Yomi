@@ -9,7 +9,7 @@ from yomi.db.sqlite import (
 )
 
 
-def test_initialize_user_db_creates_only_metadata_marker(tmp_path):
+def test_initialize_user_db_creates_phase_2_metadata_marker(tmp_path):
     user_db = tmp_path / "user.db"
 
     initialize_user_db(user_db)
@@ -25,8 +25,9 @@ def test_initialize_user_db_creates_only_metadata_marker(tmp_path):
             "SELECT value FROM user_metadata WHERE key = 'schema_version'"
         ).fetchone()[0]
 
-    assert tables == {"user_metadata"}
-    assert version == "1"
+    assert "user_metadata" in tables
+    assert "applied_migrations" in tables
+    assert version == "2"
 
 
 def test_user_db_connection_applies_required_pragmas(tmp_path):
@@ -74,4 +75,3 @@ def test_content_db_readonly_check_does_not_write(tmp_path):
     assert version == "content-v1"
     assert not (tmp_path / "content.db-wal").exists()
     assert not (tmp_path / "content.db-shm").exists()
-
