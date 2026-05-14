@@ -10,6 +10,13 @@ class LoginRequest(BaseModel):
     password: str
 
 
+class RegisterRequest(BaseModel):
+    invite_code: str
+    username: str
+    display_name: str
+    password: str
+
+
 class UserResponse(BaseModel):
     id: int
     username: str
