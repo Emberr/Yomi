@@ -20,7 +20,7 @@ class VocabDetail(BaseModel):
     jmdict_id: str
     slug: str
     jlpt_level: str | None
-    jlpt_source: str
+    jlpt_source: str | None
     kanji_forms: list[str]
     reading_forms: list[str]
     meanings: list[str]

@@ -22,7 +22,7 @@ class GrammarDetail(BaseModel):
     short_desc: str
     long_desc: str
     formation_pattern: str
-    common_mistakes: str
+    common_mistakes: str | None
     tags: list[str]
     sort_order: int
     source_file: str
@@ -34,5 +34,5 @@ class ExampleSentence(BaseModel):
     japanese: str
     reading: str
     translation: str
-    audio_url: str
+    audio_url: str | None
     tags: list[str]

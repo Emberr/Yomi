@@ -300,9 +300,9 @@ def _ingest_grammar_file(
             continue
 
         slug = _make_grammar_slug(title, level, seen_slugs)
-        short_desc = entry.get("short_explanation") or entry.get("short_desc")
-        long_desc = entry.get("long_explanation") or entry.get("long_desc")
-        formation = entry.get("formation") or entry.get("formation_pattern")
+        short_desc = (entry.get("short_explanation") or entry.get("short_desc") or "").strip()
+        long_desc = (entry.get("long_explanation") or entry.get("long_desc") or "").strip()
+        formation = (entry.get("formation") or entry.get("formation_pattern") or "").strip()
 
         conn.execute(
             """
@@ -342,8 +342,8 @@ def _ingest_grammar_file(
                 (
                     grammar_id,
                     jp,
-                    example.get("romaji"),
-                    example.get("en"),
+                    (example.get("romaji") or "").strip(),
+                    (example.get("en") or "").strip(),
                     None,
                     None,
                 ),
