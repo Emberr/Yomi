@@ -13,8 +13,10 @@ from yomi.admin.router import router as admin_router
 from yomi.auth.router import router as auth_router
 from yomi.config import Settings
 from yomi.db.sqlite import content_db_status, initialize_user_db, user_db_status
+from yomi.grammar.router import router as grammar_router
 from yomi.security.session_key_cache import SessionKeyCache
 from yomi.settings.router import router as settings_router
+from yomi.vocab.router import router as vocab_router
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
@@ -31,7 +33,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.session_key_cache = SessionKeyCache()
     app.include_router(admin_router)
     app.include_router(auth_router)
+    app.include_router(grammar_router)
     app.include_router(settings_router)
+    app.include_router(vocab_router)
 
     @app.get("/api/health")
     def health() -> dict[str, object]:
