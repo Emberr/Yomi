@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import secrets
 import sqlite3
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
@@ -14,7 +15,13 @@ from yomi.auth.rate_limit import (
     format_timestamp,
     parse_optional_timestamp,
 )
-from yomi.auth.schemas import LoginRequest, RegisterRequest, SessionResponse, UserResponse
+from yomi.auth.schemas import (
+    ChangePasswordRequest,
+    LoginRequest,
+    RegisterRequest,
+    SessionResponse,
+    UserResponse,
+)
 from yomi.auth.sessions import (
     SESSION_COOKIE_NAME,
     SESSION_LIFETIME,
@@ -27,8 +34,12 @@ from yomi.auth.sessions import (
 from yomi.audit.repository import record_audit_event
 from yomi.db.sqlite import open_user_db
 from yomi.invites.repository import mark_invite_used, validate_invite_for_registration
-from yomi.security.passwords import verify_password
-from yomi.users.repository import UserRecord, create_user, get_user_by_username
+from yomi.secrets.repository import list_user_secrets, upsert_user_secret
+from yomi.security.crypto import decrypt as decrypt_secret
+from yomi.security.crypto import derive_key
+from yomi.security.crypto import encrypt as encrypt_secret
+from yomi.security.passwords import hash_password, verify_password
+from yomi.users.repository import ENC_SALT_BYTES, UserRecord, create_user, get_user_by_username
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
@@ -77,6 +88,10 @@ def _client_host(request: Request) -> str | None:
 
 def _rate_limiter(request: Request):
     return request.app.state.auth_rate_limiter
+
+
+def _key_cache(request: Request):
+    return request.app.state.session_key_cache
 
 
 def _require_ip_attempt(request: Request, *, action: str) -> None:
@@ -160,6 +175,7 @@ def register(
                 detail="Registration could not be completed",
             ) from None
 
+    _key_cache(request).set(session.id, user.id, derive_key(payload.password, user.enc_salt))
     _set_session_cookie(response, token=session.id, secure=settings.behind_https)
     return {"data": {"user": _user_response(user)}, "error": None}
 
@@ -258,6 +274,7 @@ def login(
         )
         connection.commit()
 
+    _key_cache(request).set(session.id, user.id, derive_key(payload.password, user.enc_salt))
     _set_session_cookie(response, token=session.id, secure=settings.behind_https)
     return {"data": {"user": _user_response(user)}, "error": None}
 
@@ -287,6 +304,7 @@ def logout(
         )
         connection.commit()
 
+    _key_cache(request).drop(auth.session.id)
     _clear_session_cookie(response, secure=settings.behind_https)
     return {"data": {"ok": True}, "error": None}
 
@@ -311,6 +329,7 @@ def logout_everywhere(
         )
         connection.commit()
 
+    _key_cache(request).drop_all_for_user(auth.user.id)
     _clear_session_cookie(response, secure=settings.behind_https)
     return {"data": {"ok": True}, "error": None}
 
@@ -373,4 +392,82 @@ def delete_session(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Session not found",
         )
+    _key_cache(request).drop(session_id)
+    return {"data": {"ok": True}, "error": None}
+
+
+@router.post("/change-password")
+def change_password(
+    payload: ChangePasswordRequest,
+    request: Request,
+    auth: AuthenticatedUser = Depends(get_current_auth),
+    csrf: None = Depends(require_csrf),
+) -> dict[str, object]:
+    if not verify_password(payload.current_password, auth.user.password_hash):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Current password is incorrect",
+        )
+
+    current_key = _key_cache(request).get(auth.session.id)
+    if current_key is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Encryption key unavailable. Please log in again.",
+        )
+
+    new_password_hash = hash_password(payload.new_password)
+    new_enc_salt = secrets.token_bytes(ENC_SALT_BYTES)
+    new_derived_key = derive_key(payload.new_password, new_enc_salt)
+
+    settings = request.app.state.settings
+    with open_user_db(settings.user_db_path) as connection:
+        stored_secrets = list_user_secrets(connection, auth.user.id)
+
+        re_encrypted: list[tuple[str, bytes, bytes]] = []
+        try:
+            for secret in stored_secrets:
+                plaintext = decrypt_secret(secret.nonce, secret.ciphertext, current_key)
+                new_nonce, new_ciphertext = encrypt_secret(plaintext, new_derived_key)
+                re_encrypted.append((secret.provider, new_nonce, new_ciphertext))
+        except Exception:
+            connection.rollback()
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to re-encrypt secrets. Password not changed.",
+            ) from None
+
+        connection.execute(
+            "UPDATE users SET password_hash = ?, enc_salt = ? WHERE id = ?",
+            (new_password_hash, new_enc_salt, auth.user.id),
+        )
+        for provider, new_nonce, new_ciphertext in re_encrypted:
+            upsert_user_secret(
+                connection,
+                user_id=auth.user.id,
+                provider=provider,
+                nonce=new_nonce,
+                ciphertext=new_ciphertext,
+            )
+        # Revoke every session except the current one.
+        connection.execute(
+            "UPDATE sessions SET revoked = 1 WHERE user_id = ? AND id != ?",
+            (auth.user.id, auth.session.id),
+        )
+        record_audit_event(
+            connection,
+            event_type="password_changed",
+            user_id=auth.user.id,
+            ip_address=_client_host(request),
+            user_agent=request.headers.get("user-agent"),
+            details={},
+        )
+        connection.commit()
+
+    # Drop all cached keys for this user, then re-register the current session
+    # with the new derived key so ongoing API-key operations keep working.
+    cache = _key_cache(request)
+    cache.drop_all_for_user(auth.user.id)
+    cache.set(auth.session.id, auth.user.id, new_derived_key)
+
     return {"data": {"ok": True}, "error": None}

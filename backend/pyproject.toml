@@ -5,6 +5,7 @@ description = "Yomi FastAPI backend"
 requires-python = ">=3.12"
 license = { text = "AGPL-3.0-or-later" }
 dependencies = [
+  "cryptography>=48.0.0",
   "fastapi>=0.115,<1.0",
   "pwdlib[argon2]>=0.2,<1.0",
   "uvicorn[standard]>=0.32,<1.0",
