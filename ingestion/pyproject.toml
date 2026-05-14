@@ -1,9 +1,13 @@
 [project]
 name = "yomi-ingestion"
 version = "0.1.0"
-description = "Yomi content database ingestion scaffold"
+description = "Yomi content database ingestion for Yomi"
 requires-python = ">=3.12"
 license = { text = "AGPL-3.0-or-later" }
+dependencies = [
+  "ijson>=3.3,<4.0",
+  "requests>=2.32,<3.0",
+]
 
 [dependency-groups]
 dev = [
