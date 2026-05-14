@@ -34,6 +34,11 @@ class SessionResponse(BaseModel):
     current: bool
 
 
+class ChangePasswordRequest(BaseModel):
+    current_password: str
+    new_password: str
+
+
 class AuthEnvelope(BaseModel):
     data: dict[str, object]
     error: None = None

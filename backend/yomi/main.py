@@ -9,9 +9,12 @@ from fastapi import FastAPI
 
 from yomi import __version__
 from yomi.auth.rate_limit import AuthRateLimiter
+from yomi.admin.router import router as admin_router
 from yomi.auth.router import router as auth_router
 from yomi.config import Settings
 from yomi.db.sqlite import content_db_status, initialize_user_db, user_db_status
+from yomi.security.session_key_cache import SessionKeyCache
+from yomi.settings.router import router as settings_router
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
@@ -25,7 +28,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app = FastAPI(title="Yomi API", version=__version__, lifespan=lifespan)
     app.state.settings = app_settings
     app.state.auth_rate_limiter = AuthRateLimiter()
+    app.state.session_key_cache = SessionKeyCache()
+    app.include_router(admin_router)
     app.include_router(auth_router)
+    app.include_router(settings_router)
 
     @app.get("/api/health")
     def health() -> dict[str, object]:
