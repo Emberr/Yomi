@@ -141,3 +141,148 @@ export async function apiChangePassword(
   if (!res.ok) return { ok: false, error: extractError(json) };
   return { ok: true, data: null };
 }
+
+// ── Grammar types ─────────────────────────────────────────────────────────────
+
+export interface GrammarSummary {
+  id: number;
+  slug: string;
+  title: string;
+  jlpt_level: string;
+  short_desc: string;
+}
+
+export interface GrammarDetail {
+  id: number;
+  slug: string;
+  title: string;
+  jlpt_level: string;
+  jlpt_source: string;
+  short_desc: string;
+  long_desc: string;
+  formation_pattern: string;
+  common_mistakes: string | null;
+  tags: string[];
+  sort_order: number;
+  source_file: string;
+}
+
+export interface ExampleSentence {
+  id: number;
+  grammar_id: number;
+  japanese: string;
+  reading: string;
+  translation: string;
+  audio_url: string | null;
+  tags: string[];
+}
+
+// ── Vocab types ───────────────────────────────────────────────────────────────
+
+export interface VocabSummary {
+  id: number;
+  jmdict_id: string;
+  slug: string;
+  jlpt_level: string | null;
+  kanji_forms: string[];
+  reading_forms: string[];
+  meanings: string[];
+}
+
+export interface VocabDetail {
+  id: number;
+  jmdict_id: string;
+  slug: string;
+  jlpt_level: string | null;
+  jlpt_source: string | null;
+  kanji_forms: string[];
+  reading_forms: string[];
+  meanings: string[];
+  pos_tags: string[];
+  frequency: number | null;
+}
+
+// ── SRS types ─────────────────────────────────────────────────────────────────
+
+export interface SrsCard {
+  id: number;
+  user_id: number;
+  card_type: string;
+  content_id: number;
+  content_table: string;
+  state: string;
+  due: string;
+}
+
+// ── Grammar API calls ─────────────────────────────────────────────────────────
+
+export async function apiListGrammar(
+  level?: string,
+): Promise<ApiResult<GrammarSummary[]>> {
+  const qs = level ? `?level=${encodeURIComponent(level)}` : "";
+  const res = await apiFetch(`/grammar${qs}`);
+  const json: unknown = await res.json();
+  if (!res.ok) return { ok: false, error: extractError(json) };
+  return {
+    ok: true,
+    data: (json as { data: GrammarSummary[] }).data,
+  };
+}
+
+export async function apiGetGrammar(
+  slug: string,
+): Promise<ApiResult<GrammarDetail>> {
+  const res = await apiFetch(`/grammar/${encodeURIComponent(slug)}`);
+  const json: unknown = await res.json();
+  if (!res.ok) return { ok: false, error: extractError(json) };
+  return { ok: true, data: (json as { data: GrammarDetail }).data };
+}
+
+export async function apiGetGrammarSentences(
+  slug: string,
+): Promise<ApiResult<ExampleSentence[]>> {
+  const res = await apiFetch(
+    `/grammar/${encodeURIComponent(slug)}/sentences`,
+  );
+  const json: unknown = await res.json();
+  if (!res.ok) return { ok: false, error: extractError(json) };
+  return { ok: true, data: (json as { data: ExampleSentence[] }).data };
+}
+
+// ── Vocab API calls ───────────────────────────────────────────────────────────
+
+export async function apiSearchVocab(
+  q: string,
+  opts?: { level?: string; limit?: number },
+): Promise<ApiResult<VocabSummary[]>> {
+  const params = new URLSearchParams({ q });
+  if (opts?.level) params.set("level", opts.level);
+  if (opts?.limit !== undefined) params.set("limit", String(opts.limit));
+  const res = await apiFetch(`/vocab/search?${params.toString()}`);
+  const json: unknown = await res.json();
+  if (!res.ok) return { ok: false, error: extractError(json) };
+  return { ok: true, data: (json as { data: VocabSummary[] }).data };
+}
+
+export async function apiGetVocab(id: number): Promise<ApiResult<VocabDetail>> {
+  const res = await apiFetch(`/vocab/${id}`);
+  const json: unknown = await res.json();
+  if (!res.ok) return { ok: false, error: extractError(json) };
+  return { ok: true, data: (json as { data: VocabDetail }).data };
+}
+
+// ── SRS API calls ─────────────────────────────────────────────────────────────
+
+export async function apiCreateSrsCard(payload: {
+  content_id: number;
+  content_table: string;
+  card_type: string;
+}): Promise<ApiResult<SrsCard>> {
+  const res = await apiFetch("/srs/cards", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+  const json: unknown = await res.json();
+  if (!res.ok) return { ok: false, error: extractError(json) };
+  return { ok: true, data: (json as { data: SrsCard }).data };
+}

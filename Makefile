@@ -47,11 +47,11 @@ typecheck:
 	cd frontend && npm ci && npm run typecheck
 
 bootstrap:
-	@if command -v uv >/dev/null 2>&1; then \
-		cd backend && uv run python -m yomi.bootstrap_admin; \
-	else \
-		cd backend && python3 -m yomi.bootstrap_admin; \
-	fi
+	docker compose run --rm \
+		-e YOMI_BOOTSTRAP_ADMIN_USERNAME \
+		-e YOMI_BOOTSTRAP_ADMIN_DISPLAY_NAME \
+		-e YOMI_BOOTSTRAP_ADMIN_PASSWORD \
+		backend python -m yomi.bootstrap_admin
 
 backup:
 	@printf '%s\n' 'Phase 1 stub: backup is out of scope until runtime data and checkpoint flow are defined.'

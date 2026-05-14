@@ -1,15 +1,16 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 import { type ReactNode } from "react";
 import { useAuth } from "@/contexts/auth-context";
 import { apiLogout } from "@/lib/api";
 
 const NAV_ITEMS = [
   { label: "Dashboard", href: "/", active: true },
-  { label: "Grammar", active: false },
+  { label: "Grammar", href: "/grammar", active: true },
+  { label: "Vocabulary", href: "/vocabulary", active: true },
   { label: "Review", active: false },
-  { label: "Vocabulary", active: false },
   { label: "Kanji", active: false },
   { label: "Settings", active: false },
 ] as const;
@@ -17,6 +18,7 @@ const NAV_ITEMS = [
 export function AppShell({ children }: { children: ReactNode }) {
   const { auth, clearUser } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
 
   function handleLogout() {
     void (async () => {
@@ -37,14 +39,14 @@ export function AppShell({ children }: { children: ReactNode }) {
         <nav className="nav">
           {NAV_ITEMS.map((item) =>
             item.active ? (
-              <a
-                aria-current="page"
-                className="nav-item nav-item-active"
+              <Link
+                aria-current={pathname === item.href ? "page" : undefined}
+                className={`nav-item nav-item-active${pathname === item.href ? " nav-item-current" : ""}`}
                 href={item.href}
                 key={item.label}
               >
                 <span>{item.label}</span>
-              </a>
+              </Link>
             ) : (
               <button
                 aria-disabled="true"
@@ -74,9 +76,9 @@ export function AppShell({ children }: { children: ReactNode }) {
                 <div className="user-role">Admin</div>
               )}
               <div className="user-actions">
-                <a className="user-action-link" href="/change-password">
+                <Link className="user-action-link" href="/change-password">
                   Change password
-                </a>
+                </Link>
                 <button
                   className="btn btn-ghost btn-sm"
                   onClick={handleLogout}
@@ -89,9 +91,9 @@ export function AppShell({ children }: { children: ReactNode }) {
           )}
 
           {auth.status === "unauthenticated" && (
-            <a className="btn btn-ghost btn-sm" href="/login">
+            <Link className="btn btn-ghost btn-sm" href="/login">
               Sign in
-            </a>
+            </Link>
           )}
         </div>
       </aside>

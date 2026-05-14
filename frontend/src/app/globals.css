@@ -403,6 +403,387 @@ button {
   opacity: 0.8;
 }
 
+/* ── JLPT badges ────────────────────────────────────────────────────────── */
+
+.jlpt-badge {
+  border: 1px solid currentColor;
+  border-radius: 4px;
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  padding: 2px 6px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.jlpt-n5 { color: var(--jlpt-n5); }
+.jlpt-n4 { color: var(--jlpt-n4); }
+.jlpt-n3 { color: var(--jlpt-n3); }
+.jlpt-n2 { color: var(--jlpt-n2); }
+.jlpt-n1 { color: var(--jlpt-n1); }
+.jlpt-unknown { color: var(--text-muted); }
+
+/* ── Level filter tabs ──────────────────────────────────────────────────── */
+
+.level-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 20px 0 6px;
+}
+
+.level-tab {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.84rem;
+  padding: 5px 14px;
+  transition: border-color 0.12s, color 0.12s, background 0.12s;
+}
+
+.level-tab:hover {
+  border-color: var(--accent-dim);
+  color: var(--text-primary);
+}
+
+.level-tab-active {
+  background: var(--bg-raised);
+  border-color: var(--accent-dim);
+  color: var(--text-primary);
+}
+
+/* ── Grammar list ───────────────────────────────────────────────────────── */
+
+.grammar-list {
+  display: grid;
+  gap: 8px;
+  list-style: none;
+  margin: 16px 0 0;
+  max-width: 780px;
+  padding: 0;
+}
+
+.grammar-item {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-surface);
+  display: block;
+  padding: 16px 18px;
+  transition: border-color 0.12s, background 0.12s;
+}
+
+.grammar-item:hover {
+  background: var(--bg-raised);
+  border-color: var(--accent-dim);
+}
+
+.grammar-item-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.grammar-item-title {
+  color: var(--accent);
+  font-size: 1.05rem;
+}
+
+.grammar-item-desc {
+  color: var(--text-muted);
+  font-size: 0.87rem;
+  line-height: 1.5;
+  margin: 6px 0 0;
+}
+
+/* ── Grammar detail ─────────────────────────────────────────────────────── */
+
+.grammar-detail {
+  display: grid;
+  gap: 0;
+  max-width: 760px;
+  padding-top: 22px;
+}
+
+.detail-section {
+  border-bottom: 1px solid var(--border);
+  padding: 18px 0;
+}
+
+.detail-section:last-child {
+  border-bottom: none;
+}
+
+.detail-heading {
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  margin: 0 0 10px;
+  text-transform: uppercase;
+}
+
+.detail-body {
+  color: var(--text-primary);
+  font-size: 0.95rem;
+  line-height: 1.7;
+  margin: 0;
+}
+
+.grammar-short-desc {
+  color: var(--text-primary);
+  font-size: 1rem;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.formation-pattern {
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--accent);
+  font-size: 0.97rem;
+  margin: 0;
+  padding: 10px 14px;
+}
+
+/* ── Example sentences ──────────────────────────────────────────────────── */
+
+.sentence-list {
+  display: grid;
+  gap: 14px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.sentence-item {
+  border-left: 2px solid var(--accent-dim);
+  padding-left: 14px;
+}
+
+.sentence-japanese {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+}
+
+.sentence-text {
+  color: var(--text-primary);
+  font-size: 1.1rem;
+  line-height: 2;
+}
+
+.sentence-translation {
+  color: var(--text-muted);
+  font-size: 0.87rem;
+  line-height: 1.5;
+  margin: 4px 0 0;
+}
+
+/* ── Tags ───────────────────────────────────────────────────────────────── */
+
+.tag-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.tag {
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  padding: 2px 8px;
+}
+
+/* ── Practice button ────────────────────────────────────────────────────── */
+
+.detail-actions {
+  padding-top: 20px;
+}
+
+.practice-btn {
+  max-width: 200px;
+}
+
+.practice-done {
+  color: var(--success);
+  font-size: 0.9rem;
+}
+
+/* ── TTS button ─────────────────────────────────────────────────────────── */
+
+.tts-btn {
+  flex-shrink: 0;
+  min-width: 34px;
+}
+
+.tts-btn-speaking {
+  border-color: var(--accent-dim);
+  color: var(--accent);
+}
+
+/* ── Vocabulary search ──────────────────────────────────────────────────── */
+
+.vocab-search-bar {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  max-width: 520px;
+  padding: 20px 0 8px;
+}
+
+.vocab-search-input {
+  flex: 1;
+}
+
+.search-spinner {
+  color: var(--text-muted);
+  font-size: 0.84rem;
+  white-space: nowrap;
+}
+
+.vocab-list {
+  display: grid;
+  gap: 6px;
+  list-style: none;
+  margin: 10px 0 0;
+  max-width: 680px;
+  padding: 0;
+}
+
+.vocab-item {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-surface);
+  overflow: hidden;
+}
+
+.vocab-item-main {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  display: block;
+  font: inherit;
+  padding: 14px 16px;
+  text-align: left;
+  width: 100%;
+  transition: background 0.12s;
+}
+
+.vocab-item-main:hover {
+  background: var(--bg-raised);
+}
+
+.vocab-item-head {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.vocab-kanji {
+  color: var(--accent);
+  font-size: 1.15rem;
+}
+
+.vocab-reading {
+  color: var(--text-muted);
+  font-size: 0.88rem;
+}
+
+.vocab-meanings {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  line-height: 1.5;
+  margin: 5px 0 0;
+}
+
+.vocab-detail {
+  background: var(--bg-raised);
+  border-top: 1px solid var(--border);
+  padding: 14px 16px;
+}
+
+.vocab-detail-forms {
+  display: grid;
+  gap: 4px;
+  margin-bottom: 10px;
+}
+
+.vocab-forms-row {
+  display: flex;
+  gap: 8px;
+  font-size: 0.86rem;
+}
+
+.vocab-forms-label {
+  color: var(--text-muted);
+  flex-shrink: 0;
+  min-width: 64px;
+}
+
+.vocab-meanings-full {
+  color: var(--text-primary);
+  font-size: 0.88rem;
+  line-height: 1.7;
+  margin: 0 0 10px;
+  padding-left: 18px;
+}
+
+.vocab-actions {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+}
+
+/* ── Content state helpers ──────────────────────────────────────────────── */
+
+.content-loading {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  padding: 30px 0;
+}
+
+.content-empty {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  padding: 30px 0;
+}
+
+.content-error {
+  color: var(--text-primary);
+  display: grid;
+  font-size: 0.9rem;
+  gap: 14px;
+  padding: 30px 0;
+}
+
+.content-hint {
+  color: var(--text-muted);
+  font-size: 0.88rem;
+  margin: 8px 0 0;
+}
+
+.back-link {
+  color: var(--text-muted);
+  font-size: 0.84rem;
+  transition: color 0.12s;
+}
+
+.back-link:hover {
+  color: var(--text-primary);
+}
+
+.topbar-left {
+  align-items: baseline;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
 @media (max-width: 760px) {
   .app-shell {
     grid-template-columns: 1fr;
