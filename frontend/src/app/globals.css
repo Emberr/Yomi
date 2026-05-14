@@ -1112,3 +1112,169 @@ button {
   margin: 2px 0 0;
 }
 
+/* ── Dashboard ──────────────────────────────────────────────────────────── */
+
+.btn-accent {
+  background: var(--accent-dim);
+  border-color: var(--accent);
+  color: var(--text-primary);
+}
+
+.btn-accent:hover:not(:disabled) {
+  opacity: 0.82;
+}
+
+.btn-secondary {
+  background: transparent;
+  border-color: var(--border);
+  color: var(--text-muted);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  border-color: var(--accent-dim);
+  color: var(--text-primary);
+}
+
+.panel-heading {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0 0 16px;
+  color: var(--text-primary);
+}
+
+.panel-error {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.stats-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.stat-card {
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 14px 20px;
+  min-width: 100px;
+  flex: 1;
+}
+
+.stat-value {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--accent);
+  line-height: 1.1;
+}
+
+.stat-label {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  margin-top: 4px;
+  text-align: center;
+}
+
+.stat-sub {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.dashboard-section {
+  margin-top: 8px;
+}
+
+.section-heading {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin: 0 0 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.state-breakdown {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.state-badge {
+  border-radius: 4px;
+  font-size: 0.82rem;
+  padding: 4px 10px;
+}
+
+.state-badge-new {
+  background: color-mix(in srgb, var(--jlpt-n5) 30%, transparent);
+  border: 1px solid var(--jlpt-n5);
+}
+
+.state-badge-learning {
+  background: color-mix(in srgb, var(--jlpt-n3) 30%, transparent);
+  border: 1px solid var(--jlpt-n3);
+}
+
+.state-badge-review {
+  background: color-mix(in srgb, var(--accent-dim) 30%, transparent);
+  border: 1px solid var(--accent-dim);
+}
+
+.state-badge-relearning {
+  background: color-mix(in srgb, var(--jlpt-n1) 30%, transparent);
+  border: 1px solid var(--jlpt-n1);
+}
+
+.dashboard-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.muted-note {
+  color: var(--text-muted);
+  font-size: 0.88rem;
+  margin: 0;
+}
+
+.weak-points-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.weak-point-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 12px;
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+.weak-point-name {
+  font-size: 0.88rem;
+  color: var(--text-primary);
+}
+
+.weak-point-rate {
+  font-size: 0.82rem;
+  color: var(--danger);
+  white-space: nowrap;
+}
+
+.weak-point-count {
+  color: var(--text-muted);
+}
+

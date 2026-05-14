@@ -290,6 +290,61 @@ export async function apiGetVocab(id: number): Promise<ApiResult<VocabDetail>> {
   return { ok: true, data: (json as { data: VocabDetail }).data };
 }
 
+// ── Progress types ────────────────────────────────────────────────────────────
+
+export interface CardsByState {
+  new: number;
+  learning: number;
+  review: number;
+  relearning: number;
+}
+
+export interface ProgressSummary {
+  total_cards: number;
+  due_today: number;
+  cards_by_state: CardsByState;
+  total_reviews: number;
+  reviews_today: number;
+  current_streak: number;
+}
+
+export interface HeatmapEntry {
+  date: string;
+  reviews_done: number;
+  lessons_done: number;
+  minutes_est: number;
+}
+
+export interface WeakPoint {
+  card_type: string;
+  content_table: string;
+  total_reviews: number;
+  correct_rate: number;
+}
+
+// ── Progress API calls ────────────────────────────────────────────────────────
+
+export async function apiGetProgressSummary(): Promise<ApiResult<ProgressSummary>> {
+  const res = await apiFetch("/progress/summary");
+  const json: unknown = await res.json();
+  if (!res.ok) return { ok: false, error: extractError(json) };
+  return { ok: true, data: (json as { data: ProgressSummary }).data };
+}
+
+export async function apiGetHeatmap(year: number): Promise<ApiResult<HeatmapEntry[]>> {
+  const res = await apiFetch(`/progress/heatmap?year=${year}`);
+  const json: unknown = await res.json();
+  if (!res.ok) return { ok: false, error: extractError(json) };
+  return { ok: true, data: (json as { data: HeatmapEntry[] }).data };
+}
+
+export async function apiGetWeakPoints(): Promise<ApiResult<WeakPoint[]>> {
+  const res = await apiFetch("/progress/weak-points");
+  const json: unknown = await res.json();
+  if (!res.ok) return { ok: false, error: extractError(json) };
+  return { ok: true, data: (json as { data: WeakPoint[] }).data };
+}
+
 // ── SRS API calls ─────────────────────────────────────────────────────────────
 
 export async function apiCreateSrsCard(payload: {
