@@ -1,22 +1,29 @@
 # Yomi
 
-Yomi is a planned self-hosted, invite-only Japanese language learning platform.
+Yomi is a self-hosted, invite-only Japanese language learning platform with multi-user support, spaced repetition scheduling (FSRS), grammar/vocabulary content, and optional per-user AI key support.
 
-Current status: Phase 1 foundation skeleton. The stack can build and run with
-minimal FastAPI, Next.js, ingestion, and nginx foundations. Product features are
-not implemented yet.
+**Current status:** Phases 1–3 substantially complete.
+- Phase 1: Foundation (FastAPI, Next.js, Docker Compose, SQLite, nginx)
+- Phase 2: Auth & multi-user (sessions, CSRF, encrypted secrets, admin, audit logging)
+- Phase 3: Core content & SRS (grammar/vocab ingest, FSRS reviews, progress tracking)
 
-## Phase 1 Commands
+Phases 4–6 (AI layer, advanced features, polish) are planned.
+
+## Quick Start
 
 ```bash
-make test
-make lint
-make typecheck
-make dev
+make dev          # Start Docker Compose stack on http://localhost:8888
+make test         # Run all tests (backend + ingestion)
+make lint         # Check Python syntax, merge conflicts, frontend lint
+make typecheck    # Python + frontend type checking
+make bootstrap    # Create initial admin user (required on first run)
+make backup       # Placeholder for future backup feature
 ```
 
-`make dev` starts the current Docker Compose stack on
-`http://localhost:8888`. `make bootstrap` and `make backup` are still explicit
-stubs until auth/admin setup and backup flows are implemented in later phases.
+## Architecture & Development
 
-See `AGENTS.md` and the phase plans under `docs/agent/` for agent workflow context. These agent and architecture documents are local planning context and are ignored by git in this workspace.
+See `AGENTS.md` for project rules and context-loading guidelines.
+
+Canonical architecture: [`docs/architecture/YOMI_ARCHITECTURE.md`](docs/architecture/YOMI_ARCHITECTURE.md)
+
+Agent workflow docs: [`docs/agent/README.md`](docs/agent/README.md)

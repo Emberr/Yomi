@@ -40,3 +40,5 @@ ingestion/sources/
 # Local AI scratch files; committed repo docs remain trackable.
 .codex/
 .agents/
+.claude/
+
