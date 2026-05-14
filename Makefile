@@ -1,45 +1,55 @@
 .PHONY: dev test lint typecheck bootstrap backup
 
-REQUIRED_FILES := AGENTS.md README.md LICENSE LICENSES.md SECURITY.md CONTRIBUTING.md .env.example .gitignore Makefile docker-compose.yml
-REQUIRED_DIRS := frontend backend ingestion nginx deploy docs/agent docs/architecture
-CHECK_FILES := README.md LICENSE LICENSES.md SECURITY.md CONTRIBUTING.md .env.example .gitignore Makefile docker-compose.yml
-
 dev:
-	@printf '%s\n' 'M0.2 placeholder: dev server is not available until app scaffolds and Compose services are added.'
-	@exit 1
+	docker compose up -d
 
 test:
-	@printf '%s\n' 'Checking Phase 0 repository scaffold...'
-	@for path in $(REQUIRED_FILES); do \
-		if [ ! -f "$$path" ]; then \
-			printf 'Missing required file: %s\n' "$$path"; \
-			exit 1; \
-		fi; \
-	done
-	@for path in $(REQUIRED_DIRS); do \
-		if [ ! -d "$$path" ]; then \
-			printf 'Missing required directory: %s\n' "$$path"; \
-			exit 1; \
-		fi; \
-	done
-	@printf '%s\n' 'Phase 0 repository scaffold files and directories are present.'
+	@if command -v uv >/dev/null 2>&1; then \
+		cd backend && uv run pytest; \
+	else \
+		cd backend && python3 -m pytest; \
+	fi
+	@if command -v uv >/dev/null 2>&1; then \
+		cd ingestion && uv run pytest; \
+	else \
+		cd ingestion && python3 -m pytest; \
+	fi
 
 lint:
-	@printf '%s\n' 'Checking Phase 0 scaffold files for unresolved merge conflict markers...'
-	@if grep -n -E '^(<<<<<<<|=======|>>>>>>>)' $(CHECK_FILES); then \
+	@printf '%s\n' 'Checking for unresolved merge conflict markers...'
+	@if rg -n '^(<<<<<<<|=======|>>>>>>>)' . --glob '!frontend/package-lock.json'; then \
 		printf '%s\n' 'Unresolved merge conflict marker found.'; \
 		exit 1; \
 	fi
-	@printf '%s\n' 'No unresolved merge conflict markers found in scaffold files.'
+	@if command -v uv >/dev/null 2>&1; then \
+		cd backend && uv run python -m compileall yomi tests; \
+	else \
+		cd backend && python3 -m compileall yomi tests; \
+	fi
+	@if command -v uv >/dev/null 2>&1; then \
+		cd ingestion && uv run python -m compileall ingest.py tests; \
+	else \
+		cd ingestion && python3 -m compileall ingest.py tests; \
+	fi
+	cd frontend && npm ci && npm run lint
 
 typecheck:
-	@printf '%s\n' 'M0.2 placeholder: typecheck is not available until backend/frontend projects are scaffolded.'
-	@exit 1
+	@if command -v uv >/dev/null 2>&1; then \
+		cd backend && uv run python -m compileall yomi tests; \
+	else \
+		cd backend && python3 -m compileall yomi tests; \
+	fi
+	@if command -v uv >/dev/null 2>&1; then \
+		cd ingestion && uv run python -m compileall ingest.py tests; \
+	else \
+		cd ingestion && python3 -m compileall ingest.py tests; \
+	fi
+	cd frontend && npm ci && npm run typecheck
 
 bootstrap:
-	@printf '%s\n' 'M0.2 placeholder: bootstrap is not available until project dependencies and setup flow are defined.'
+	@printf '%s\n' 'Phase 1 stub: bootstrap is out of scope until admin/auth setup exists.'
 	@exit 1
 
 backup:
-	@printf '%s\n' 'M0.2 placeholder: backup is not available until runtime data directories and database layout exist.'
+	@printf '%s\n' 'Phase 1 stub: backup is out of scope until runtime data and checkpoint flow are defined.'
 	@exit 1
