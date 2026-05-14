@@ -21,6 +21,8 @@ class UserRecord:
     enc_salt: bytes
     is_admin: bool
     is_active: bool
+    failed_logins: int
+    locked_until: str | None
 
 
 def _user_from_row(row: sqlite3.Row | tuple[object, ...]) -> UserRecord:
@@ -33,6 +35,8 @@ def _user_from_row(row: sqlite3.Row | tuple[object, ...]) -> UserRecord:
         enc_salt=bytes(row[5]),
         is_admin=bool(row[6]),
         is_active=bool(row[7]),
+        failed_logins=int(row[8]),
+        locked_until=None if row[9] is None else str(row[9]),
     )
 
 
@@ -81,7 +85,7 @@ def create_user(
 def get_user_by_id(connection: sqlite3.Connection, user_id: int) -> UserRecord | None:
     row = connection.execute(
         """
-        SELECT id, username, display_name, email, password_hash, enc_salt, is_admin, is_active
+        SELECT id, username, display_name, email, password_hash, enc_salt, is_admin, is_active, failed_logins, locked_until
         FROM users
         WHERE id = ?
         """,
@@ -96,7 +100,7 @@ def get_user_by_username(
 ) -> UserRecord | None:
     row = connection.execute(
         """
-        SELECT id, username, display_name, email, password_hash, enc_salt, is_admin, is_active
+        SELECT id, username, display_name, email, password_hash, enc_salt, is_admin, is_active, failed_logins, locked_until
         FROM users
         WHERE username = ?
         """,

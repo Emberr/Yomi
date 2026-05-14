@@ -32,6 +32,12 @@ def seed_user(settings: Settings, *, username: str, password: str, is_active: bo
         return user
 
 
+def csrf_headers(client: TestClient) -> dict[str, str]:
+    response = client.get("/api/auth/csrf-token")
+    token = response.json()["data"]["csrf_token"]
+    return {"X-CSRF-Token": token}
+
+
 def test_me_returns_401_with_no_session(tmp_path):
     settings = make_settings(tmp_path)
     app = create_app(settings)
@@ -62,6 +68,7 @@ def test_me_returns_401_with_expired_session(tmp_path):
         login = client.post(
             "/api/auth/login",
             json={"username": "alice", "password": "correct-password"},
+            headers=csrf_headers(client),
         )
         token = login.cookies["yomi_session"]
         with sqlite3.connect(settings.user_db_path) as connection:
@@ -84,6 +91,7 @@ def test_me_returns_401_with_revoked_session(tmp_path):
         login = client.post(
             "/api/auth/login",
             json={"username": "alice", "password": "correct-password"},
+            headers=csrf_headers(client),
         )
         token = login.cookies["yomi_session"]
         with sqlite3.connect(settings.user_db_path) as connection:
@@ -107,10 +115,12 @@ def test_inactive_user_cannot_authenticate_or_use_protected_routes(tmp_path):
         inactive_login = client.post(
             "/api/auth/login",
             json={"username": "inactive", "password": "correct-password"},
+            headers=csrf_headers(client),
         )
         active_login = client.post(
             "/api/auth/login",
             json={"username": "active", "password": "correct-password"},
+            headers=csrf_headers(client),
         )
         token = active_login.cookies["yomi_session"]
         with sqlite3.connect(settings.user_db_path) as connection:

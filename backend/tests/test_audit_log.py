@@ -61,6 +61,12 @@ def assert_no_sensitive_audit_material(settings: Settings, *sensitive_values: st
         assert sensitive_value not in serialized
 
 
+def csrf_headers(client: TestClient) -> dict[str, str]:
+    response = client.get("/api/auth/csrf-token")
+    token = response.json()["data"]["csrf_token"]
+    return {"X-CSRF-Token": token}
+
+
 def test_registration_writes_account_created_and_invite_redeemed_audit_rows(tmp_path):
     settings = make_settings(tmp_path)
     invite_code = make_invite(settings)
@@ -75,6 +81,7 @@ def test_registration_writes_account_created_and_invite_redeemed_audit_rows(tmp_
                 "display_name": "New User",
                 "password": "register-password",
             },
+            headers=csrf_headers(client),
         )
         session_token = response.cookies["yomi_session"]
 
@@ -101,10 +108,12 @@ def test_login_success_and_failure_write_audit_rows_without_passwords(tmp_path):
         failure = client.post(
             "/api/auth/login",
             json={"username": "alice", "password": "wrong-password"},
+            headers=csrf_headers(client),
         )
         success = client.post(
             "/api/auth/login",
             json={"username": "alice", "password": "correct-password"},
+            headers=csrf_headers(client),
         )
         session_token = success.cookies["yomi_session"]
 
@@ -113,7 +122,11 @@ def test_login_success_and_failure_write_audit_rows_without_passwords(tmp_path):
 
     assert failure.status_code == 401
     assert success.status_code == 200
-    assert (user.id, "login_failure", {"username": "alice"}) in events
+    assert (
+        user.id,
+        "login_failure",
+        {"username": "alice", "reason": "invalid_credentials"},
+    ) in events
     assert (user.id, "login_success", {"username": "alice"}) in events
     assert_no_sensitive_audit_material(
         settings,
@@ -132,22 +145,31 @@ def test_logout_logout_everywhere_and_session_revoke_write_audit_rows(tmp_path):
         first_login = client.post(
             "/api/auth/login",
             json={"username": "alice", "password": "correct-password"},
+            headers=csrf_headers(client),
         )
         first_token = first_login.cookies["yomi_session"]
         client.post(
             "/api/auth/login",
             json={"username": "alice", "password": "correct-password"},
+            headers=csrf_headers(client),
         )
         client.get("/api/auth/sessions")
         revoke_target = first_token
-        revoke_response = client.delete(f"/api/auth/sessions/{revoke_target}")
-        logout_response = client.post("/api/auth/logout")
+        revoke_response = client.delete(
+            f"/api/auth/sessions/{revoke_target}",
+            headers=csrf_headers(client),
+        )
+        logout_response = client.post("/api/auth/logout", headers=csrf_headers(client))
 
         client.post(
             "/api/auth/login",
             json={"username": "alice", "password": "correct-password"},
+            headers=csrf_headers(client),
         )
-        everywhere_response = client.post("/api/auth/logout-everywhere")
+        everywhere_response = client.post(
+            "/api/auth/logout-everywhere",
+            headers=csrf_headers(client),
+        )
 
     event_types = [row[1] for row in audit_rows(settings)]
 

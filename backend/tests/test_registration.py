@@ -48,13 +48,23 @@ def register_payload(invite_code: str | None = None) -> dict[str, str]:
     return payload
 
 
+def csrf_headers(client: TestClient) -> dict[str, str]:
+    response = client.get("/api/auth/csrf-token")
+    token = response.json()["data"]["csrf_token"]
+    return {"X-CSRF-Token": token}
+
+
 def test_register_without_invite_fails(tmp_path):
     settings = make_settings(tmp_path)
     initialize_user_db(settings.user_db_path)
     app = create_app(settings)
 
     with TestClient(app) as client:
-        response = client.post("/api/auth/register", json=register_payload())
+        response = client.post(
+            "/api/auth/register",
+            json=register_payload(),
+            headers=csrf_headers(client),
+        )
 
     with sqlite3.connect(settings.user_db_path) as connection:
         user_count = connection.execute("SELECT COUNT(*) FROM users").fetchone()[0]
@@ -72,6 +82,7 @@ def test_register_with_invalid_invite_fails(tmp_path):
         response = client.post(
             "/api/auth/register",
             json=register_payload("not-a-real-invite"),
+            headers=csrf_headers(client),
         )
 
     with sqlite3.connect(settings.user_db_path) as connection:
@@ -90,6 +101,7 @@ def test_register_with_expired_invite_fails(tmp_path):
         response = client.post(
             "/api/auth/register",
             json=register_payload(invite_code),
+            headers=csrf_headers(client),
         )
 
     with sqlite3.connect(settings.user_db_path) as connection:
@@ -110,7 +122,11 @@ def test_register_with_used_invite_fails(tmp_path):
     app = create_app(settings)
 
     with TestClient(app) as client:
-        first = client.post("/api/auth/register", json=register_payload(invite_code))
+        first = client.post(
+            "/api/auth/register",
+            json=register_payload(invite_code),
+            headers=csrf_headers(client),
+        )
         second = client.post(
             "/api/auth/register",
             json={
@@ -119,6 +135,7 @@ def test_register_with_used_invite_fails(tmp_path):
                 "display_name": "Second User",
                 "password": "second-password",
             },
+            headers=csrf_headers(client),
         )
 
     with sqlite3.connect(settings.user_db_path) as connection:
@@ -135,7 +152,11 @@ def test_valid_normal_invite_creates_non_admin_user_and_marks_invite_used(tmp_pa
     app = create_app(settings)
 
     with TestClient(app) as client:
-        response = client.post("/api/auth/register", json=register_payload(invite_code))
+        response = client.post(
+            "/api/auth/register",
+            json=register_payload(invite_code),
+            headers=csrf_headers(client),
+        )
 
     with sqlite3.connect(settings.user_db_path) as connection:
         user = connection.execute(
@@ -160,7 +181,11 @@ def test_valid_admin_invite_creates_admin_user(tmp_path):
     app = create_app(settings)
 
     with TestClient(app) as client:
-        response = client.post("/api/auth/register", json=register_payload(invite_code))
+        response = client.post(
+            "/api/auth/register",
+            json=register_payload(invite_code),
+            headers=csrf_headers(client),
+        )
 
     with sqlite3.connect(settings.user_db_path) as connection:
         is_admin = connection.execute(
@@ -179,7 +204,11 @@ def test_successful_registration_auto_logs_in_with_server_side_session(tmp_path)
     app = create_app(settings)
 
     with TestClient(app) as client:
-        response = client.post("/api/auth/register", json=register_payload(invite_code))
+        response = client.post(
+            "/api/auth/register",
+            json=register_payload(invite_code),
+            headers=csrf_headers(client),
+        )
         me = client.get("/api/auth/me")
 
     cookie_header = response.headers["set-cookie"]
@@ -207,7 +236,11 @@ def test_failed_registration_does_not_create_partial_user_or_use_invite(tmp_path
     app = create_app(settings)
 
     with TestClient(app) as client:
-        response = client.post("/api/auth/register", json=register_payload(invite_code))
+        response = client.post(
+            "/api/auth/register",
+            json=register_payload(invite_code),
+            headers=csrf_headers(client),
+        )
 
     with sqlite3.connect(settings.user_db_path) as connection:
         user_count = connection.execute(

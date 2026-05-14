@@ -8,6 +8,7 @@ from typing import AsyncIterator
 from fastapi import FastAPI
 
 from yomi import __version__
+from yomi.auth.rate_limit import AuthRateLimiter
 from yomi.auth.router import router as auth_router
 from yomi.config import Settings
 from yomi.db.sqlite import content_db_status, initialize_user_db, user_db_status
@@ -23,6 +24,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     app = FastAPI(title="Yomi API", version=__version__, lifespan=lifespan)
     app.state.settings = app_settings
+    app.state.auth_rate_limiter = AuthRateLimiter()
     app.include_router(auth_router)
 
     @app.get("/api/health")

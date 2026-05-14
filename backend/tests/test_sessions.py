@@ -39,6 +39,12 @@ def session_rows(user_db) -> list[tuple[str, int, int]]:
         ).fetchall()
 
 
+def csrf_headers(client: TestClient) -> dict[str, str]:
+    response = client.get("/api/auth/csrf-token")
+    token = response.json()["data"]["csrf_token"]
+    return {"X-CSRF-Token": token}
+
+
 def test_login_succeeds_creates_server_side_session_and_sets_cookie(tmp_path):
     settings = make_settings(tmp_path)
     user = seed_user(settings, username="alice", password="correct-password")
@@ -48,6 +54,7 @@ def test_login_succeeds_creates_server_side_session_and_sets_cookie(tmp_path):
         response = client.post(
             "/api/auth/login",
             json={"username": "alice", "password": "correct-password"},
+            headers=csrf_headers(client),
         )
 
     assert response.status_code == 200
@@ -71,10 +78,11 @@ def test_login_sets_secure_cookie_when_behind_https(tmp_path):
     seed_user(settings, username="alice", password="correct-password")
     app = create_app(settings)
 
-    with TestClient(app) as client:
+    with TestClient(app, base_url="https://testserver") as client:
         response = client.post(
             "/api/auth/login",
             json={"username": "alice", "password": "correct-password"},
+            headers=csrf_headers(client),
         )
 
     assert response.status_code == 200
@@ -94,6 +102,7 @@ def test_login_fails_with_wrong_password_and_creates_no_session(tmp_path):
         response = client.post(
             "/api/auth/login",
             json={"username": "alice", "password": "wrong-password"},
+            headers=csrf_headers(client),
         )
 
     assert response.status_code == 401
@@ -109,10 +118,12 @@ def test_repeated_login_creates_fresh_session_token(tmp_path):
         first = client.post(
             "/api/auth/login",
             json={"username": "alice", "password": "correct-password"},
+            headers=csrf_headers(client),
         )
         second = client.post(
             "/api/auth/login",
             json={"username": "alice", "password": "correct-password"},
+            headers=csrf_headers(client),
         )
 
     first_token = first.cookies["yomi_session"]
@@ -134,6 +145,7 @@ def test_me_returns_current_user_with_valid_session(tmp_path):
         login = client.post(
             "/api/auth/login",
             json={"username": "alice", "password": "correct-password"},
+            headers=csrf_headers(client),
         )
         response = client.get("/api/auth/me")
 
@@ -151,9 +163,10 @@ def test_logout_revokes_current_session(tmp_path):
         login = client.post(
             "/api/auth/login",
             json={"username": "alice", "password": "correct-password"},
+            headers=csrf_headers(client),
         )
         token = login.cookies["yomi_session"]
-        logout = client.post("/api/auth/logout")
+        logout = client.post("/api/auth/logout", headers=csrf_headers(client))
         me_after_logout = client.get("/api/auth/me")
 
     with sqlite3.connect(settings.user_db_path) as connection:
@@ -176,12 +189,17 @@ def test_logout_everywhere_revokes_all_sessions_for_current_user(tmp_path):
         first_client.post(
             "/api/auth/login",
             json={"username": "alice", "password": "correct-password"},
+            headers=csrf_headers(first_client),
         )
         second_client.post(
             "/api/auth/login",
             json={"username": "alice", "password": "correct-password"},
+            headers=csrf_headers(second_client),
         )
-        response = first_client.post("/api/auth/logout-everywhere")
+        response = first_client.post(
+            "/api/auth/logout-everywhere",
+            headers=csrf_headers(first_client),
+        )
         first_me = first_client.get("/api/auth/me")
         second_me = second_client.get("/api/auth/me")
 
@@ -206,14 +224,17 @@ def test_sessions_list_only_returns_current_users_sessions(tmp_path):
         alice_client.post(
             "/api/auth/login",
             json={"username": "alice", "password": "alice-password"},
+            headers=csrf_headers(alice_client),
         )
         alice_client.post(
             "/api/auth/login",
             json={"username": "alice", "password": "alice-password"},
+            headers=csrf_headers(alice_client),
         )
         bob_login = bob_client.post(
             "/api/auth/login",
             json={"username": "bob", "password": "bob-password"},
+            headers=csrf_headers(bob_client),
         )
         response = alice_client.get("/api/auth/sessions")
 
@@ -234,13 +255,18 @@ def test_deleting_session_cannot_delete_another_users_session(tmp_path):
         alice_client.post(
             "/api/auth/login",
             json={"username": "alice", "password": "alice-password"},
+            headers=csrf_headers(alice_client),
         )
         bob_login = bob_client.post(
             "/api/auth/login",
             json={"username": "bob", "password": "bob-password"},
+            headers=csrf_headers(bob_client),
         )
         bob_token = bob_login.cookies["yomi_session"]
-        response = alice_client.delete(f"/api/auth/sessions/{bob_token}")
+        response = alice_client.delete(
+            f"/api/auth/sessions/{bob_token}",
+            headers=csrf_headers(alice_client),
+        )
 
     with sqlite3.connect(settings.user_db_path) as connection:
         bob_revoked = connection.execute(

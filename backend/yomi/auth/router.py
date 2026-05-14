@@ -6,7 +6,14 @@ import sqlite3
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 
+from yomi.auth.csrf import generate_csrf_token, require_csrf, set_csrf_cookie
 from yomi.auth.dependencies import AuthenticatedUser, get_current_auth
+from yomi.auth.rate_limit import (
+    ACCOUNT_LOCKOUT_DURATION,
+    FAILED_LOGIN_LIMIT,
+    format_timestamp,
+    parse_optional_timestamp,
+)
 from yomi.auth.schemas import LoginRequest, RegisterRequest, SessionResponse, UserResponse
 from yomi.auth.sessions import (
     SESSION_COOKIE_NAME,
@@ -68,13 +75,38 @@ def _client_host(request: Request) -> str | None:
     return None if request.client is None else request.client.host
 
 
+def _rate_limiter(request: Request):
+    return request.app.state.auth_rate_limiter
+
+
+def _require_ip_attempt(request: Request, *, action: str) -> None:
+    if not _rate_limiter(request).allow_ip_attempt(
+        action=action,
+        ip_address=_client_host(request),
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Too many authentication attempts",
+        )
+
+
+@router.get("/csrf-token")
+def csrf_token(request: Request, response: Response) -> dict[str, object]:
+    settings = request.app.state.settings
+    token = generate_csrf_token()
+    set_csrf_cookie(response, token=token, secure=settings.behind_https)
+    return {"data": {"csrf_token": token}, "error": None}
+
+
 @router.post("/register")
 def register(
     payload: RegisterRequest,
     request: Request,
     response: Response,
+    csrf: None = Depends(require_csrf),
 ) -> dict[str, object]:
     settings = request.app.state.settings
+    _require_ip_attempt(request, action="register")
     with open_user_db(settings.user_db_path) as connection:
         invite = validate_invite_for_registration(connection, payload.invite_code)
         if invite is None:
@@ -133,22 +165,65 @@ def register(
 
 
 @router.post("/login")
-def login(payload: LoginRequest, request: Request, response: Response) -> dict[str, object]:
+def login(
+    payload: LoginRequest,
+    request: Request,
+    response: Response,
+    csrf: None = Depends(require_csrf),
+) -> dict[str, object]:
     settings = request.app.state.settings
+    _require_ip_attempt(request, action="login")
     with open_user_db(settings.user_db_path) as connection:
         user = get_user_by_username(connection, payload.username)
+        now = _rate_limiter(request).now()
+        locked_until = None if user is None else parse_optional_timestamp(user.locked_until)
+        if user is not None and locked_until is not None and locked_until > now:
+            record_audit_event(
+                connection,
+                event_type="login_failure",
+                user_id=user.id,
+                ip_address=_client_host(request),
+                user_agent=request.headers.get("user-agent"),
+                details={"username": payload.username, "reason": "account_locked"},
+            )
+            connection.commit()
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid username or password",
+            )
+
         if (
             user is None
             or not user.is_active
             or not verify_password(payload.password, user.password_hash)
         ):
+            if user is not None and user.is_active:
+                failed_count = _rate_limiter(request).account_failure_count(user.username)
+                locked_until_value = None
+                if failed_count >= FAILED_LOGIN_LIMIT:
+                    locked_until_value = now + ACCOUNT_LOCKOUT_DURATION
+                connection.execute(
+                    """
+                    UPDATE users
+                    SET failed_logins = ?, locked_until = ?
+                    WHERE id = ?
+                    """,
+                    (
+                        failed_count,
+                        None if locked_until_value is None else format_timestamp(locked_until_value),
+                        user.id,
+                    ),
+                )
             record_audit_event(
                 connection,
                 event_type="login_failure",
                 user_id=None if user is None else user.id,
                 ip_address=_client_host(request),
                 user_agent=request.headers.get("user-agent"),
-                details={"username": payload.username},
+                details={
+                    "username": payload.username,
+                    "reason": "invalid_credentials",
+                },
             )
             connection.commit()
             raise HTTPException(
@@ -163,9 +238,16 @@ def login(payload: LoginRequest, request: Request, response: Response) -> dict[s
             user_agent=request.headers.get("user-agent"),
         )
         connection.execute(
-            "UPDATE users SET last_login_at = CURRENT_TIMESTAMP WHERE id = ?",
+            """
+            UPDATE users
+            SET last_login_at = CURRENT_TIMESTAMP,
+                failed_logins = 0,
+                locked_until = NULL
+            WHERE id = ?
+            """,
             (user.id,),
         )
+        _rate_limiter(request).clear_account_failures(user.username)
         record_audit_event(
             connection,
             event_type="login_success",
@@ -190,6 +272,7 @@ def logout(
     request: Request,
     response: Response,
     auth: AuthenticatedUser = Depends(get_current_auth),
+    csrf: None = Depends(require_csrf),
 ) -> dict[str, object]:
     settings = request.app.state.settings
     with open_user_db(settings.user_db_path) as connection:
@@ -213,6 +296,7 @@ def logout_everywhere(
     request: Request,
     response: Response,
     auth: AuthenticatedUser = Depends(get_current_auth),
+    csrf: None = Depends(require_csrf),
 ) -> dict[str, object]:
     settings = request.app.state.settings
     with open_user_db(settings.user_db_path) as connection:
@@ -264,6 +348,7 @@ def delete_session(
     session_id: str,
     request: Request,
     auth: AuthenticatedUser = Depends(get_current_auth),
+    csrf: None = Depends(require_csrf),
 ) -> dict[str, object]:
     settings = request.app.state.settings
     with open_user_db(settings.user_db_path) as connection:
