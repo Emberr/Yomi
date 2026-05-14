@@ -27,4 +27,4 @@ def test_health_reports_missing_content_db_as_degraded_not_failure(tmp_path):
     assert body["databases"]["content"]["schema_version"] is None
     assert not content_db.exists()
     assert body["databases"]["user"]["status"] == "ok"
-    assert body["databases"]["user"]["schema_version"] == "2"
+    assert body["databases"]["user"]["schema_version"] == "3"

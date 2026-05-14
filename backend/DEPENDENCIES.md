@@ -21,6 +21,13 @@
   - Why needed: `cryptography.hazmat.primitives.ciphers.aead.AESGCM` provides AES-GCM with proper nonce handling. Used only for data-at-rest encryption of user API keys; not used for auth or TLS.
   - Security/operational implications: Nonces are 12-byte random values (generated via `secrets.token_bytes`). Each encrypt call generates a fresh nonce; reuse would break confidentiality. Ciphertext includes a 16-byte GCM authentication tag that detects tampering. No global master key — all keys are per-user, derived from the user's login password via Argon2id KDF. No plaintext secrets are ever written to disk.
 
+- fsrs (PyPI: `fsrs`, project: Open Spaced Repetition)
+  - Purpose: FSRS-6 spaced repetition scheduling algorithm for SRS card review.
+  - License: MIT.
+  - Why needed: Provides the FSRS memory model (Difficulty, Stability, Retrievability) via `Scheduler.review_card(card, rating)`. Yomi is FSRS-first from v1; no SM-2 fallback. The `Card`, `Scheduler`, `Rating`, `State`, and `ReviewLog` types are the public API surface used.
+  - API notes: Package name on PyPI is `fsrs` (not `py-fsrs`). Architecture documents reference `py-fsrs` but the installed package is `fsrs>=6.0`. `State` enum values: Learning=1, Review=2, Relearning=3 (no `New` state in library; Yomi stores "New" as a DB sentinel for cards not yet reviewed). Card round-trips via `Card.from_dict()` / `to_dict()`.
+  - Security/operational implications: Pure computation, no network calls, no I/O, no user data exposure. All card state is stored in `user.db` under the authenticated user's `user_id`.
+
 - Uvicorn
   - Purpose: ASGI server for running FastAPI in the backend container.
   - License: BSD-3-Clause.

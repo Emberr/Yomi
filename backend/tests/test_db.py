@@ -27,7 +27,7 @@ def test_initialize_user_db_creates_phase_2_metadata_marker(tmp_path):
 
     assert "user_metadata" in tables
     assert "applied_migrations" in tables
-    assert version == "2"
+    assert version == "3"
 
 
 def test_user_db_connection_applies_required_pragmas(tmp_path):

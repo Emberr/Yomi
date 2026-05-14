@@ -6,7 +6,7 @@ import sqlite3
 from pathlib import Path
 from typing import Any
 
-USER_SCHEMA_VERSION = "2"
+USER_SCHEMA_VERSION = "3"
 CONTENT_METADATA_TABLE = "content_metadata"
 
 
@@ -102,6 +102,100 @@ USER_DB_MIGRATIONS: tuple[tuple[str, str], ...] = (
 
         UPDATE user_metadata
         SET value = '2'
+        WHERE key = 'schema_version';
+        """,
+    ),
+    (
+        "0003_srs_core",
+        """
+        CREATE TABLE IF NOT EXISTS srs_cards (
+            id              INTEGER PRIMARY KEY,
+            user_id         INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            card_type       TEXT NOT NULL,
+            content_id      INTEGER NOT NULL,
+            content_table   TEXT NOT NULL,
+            state           TEXT NOT NULL DEFAULT 'New',
+            difficulty      REAL,
+            stability       REAL,
+            step            INTEGER,
+            last_review     DATETIME,
+            due             DATETIME NOT NULL,
+            created_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            suspended       INTEGER NOT NULL DEFAULT 0
+        );
+        CREATE INDEX IF NOT EXISTS idx_cards_user_due
+            ON srs_cards(user_id, due) WHERE suspended = 0;
+        CREATE INDEX IF NOT EXISTS idx_cards_user_type
+            ON srs_cards(user_id, card_type, due);
+
+        CREATE TABLE IF NOT EXISTS review_history (
+            id                INTEGER PRIMARY KEY,
+            card_id           INTEGER NOT NULL REFERENCES srs_cards(id) ON DELETE CASCADE,
+            user_id           INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            reviewed_at       DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            rating            INTEGER NOT NULL,
+            user_answer       TEXT,
+            ai_score          REAL,
+            ai_feedback       TEXT,
+            ai_overridden     INTEGER NOT NULL DEFAULT 0,
+            time_taken_ms     INTEGER,
+            state_before      TEXT,
+            stability_before  REAL,
+            difficulty_before REAL
+        );
+        CREATE INDEX IF NOT EXISTS idx_history_card_time
+            ON review_history(card_id, reviewed_at);
+        CREATE INDEX IF NOT EXISTS idx_history_user_time
+            ON review_history(user_id, reviewed_at);
+
+        CREATE TABLE IF NOT EXISTS lesson_completions (
+            id           INTEGER PRIMARY KEY,
+            user_id      INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            grammar_id   INTEGER NOT NULL,
+            completed_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+        );
+        CREATE INDEX IF NOT EXISTS idx_lessons_user
+            ON lesson_completions(user_id);
+
+        CREATE TABLE IF NOT EXISTS quiz_attempts (
+            id           INTEGER PRIMARY KEY,
+            user_id      INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            quiz_type    TEXT NOT NULL,
+            grammar_id   INTEGER,
+            vocab_id     INTEGER,
+            question     TEXT NOT NULL,
+            user_answer  TEXT,
+            correct      INTEGER,
+            attempted_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+        );
+        CREATE INDEX IF NOT EXISTS idx_quiz_user_time
+            ON quiz_attempts(user_id, attempted_at);
+
+        CREATE TABLE IF NOT EXISTS saved_sentences (
+            id          INTEGER PRIMARY KEY,
+            user_id     INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            japanese    TEXT NOT NULL,
+            romaji      TEXT,
+            translation TEXT,
+            notes       TEXT,
+            tags        TEXT,
+            source      TEXT,
+            saved_at    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+        );
+        CREATE INDEX IF NOT EXISTS idx_saved_user
+            ON saved_sentences(user_id);
+
+        CREATE TABLE IF NOT EXISTS daily_activity (
+            user_id      INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            date         DATE NOT NULL,
+            reviews_done INTEGER NOT NULL DEFAULT 0,
+            lessons_done INTEGER NOT NULL DEFAULT 0,
+            minutes_est  INTEGER NOT NULL DEFAULT 0,
+            PRIMARY KEY (user_id, date)
+        );
+
+        UPDATE user_metadata
+        SET value = '3'
         WHERE key = 'schema_version';
         """,
     ),
