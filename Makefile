@@ -47,8 +47,11 @@ typecheck:
 	cd frontend && npm ci && npm run typecheck
 
 bootstrap:
-	@printf '%s\n' 'Phase 1 stub: bootstrap is out of scope until admin/auth setup exists.'
-	@exit 1
+	@if command -v uv >/dev/null 2>&1; then \
+		cd backend && uv run python -m yomi.bootstrap_admin; \
+	else \
+		cd backend && python3 -m yomi.bootstrap_admin; \
+	fi
 
 backup:
 	@printf '%s\n' 'Phase 1 stub: backup is out of scope until runtime data and checkpoint flow are defined.'

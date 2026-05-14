@@ -8,6 +8,12 @@
   - Why needed: Provides the project-standard FastAPI foundation instead of hand-written ASGI routing.
   - Security/operational implications: Request validation and OpenAPI support are useful defaults; keep updated with Starlette/Pydantic security releases.
 
+- pwdlib[argon2]
+  - Purpose: Argon2id password hashing and verification.
+  - License: MIT.
+  - Why needed: Uses a maintained password hashing library instead of local cryptographic code.
+  - Security/operational implications: Password hashes are intentionally expensive to compute; keep Argon2 parameters aligned with project security requirements and monitor dependency updates.
+
 - Uvicorn
   - Purpose: ASGI server for running FastAPI in the backend container.
   - License: BSD-3-Clause.
