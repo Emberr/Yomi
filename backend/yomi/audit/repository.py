@@ -48,6 +48,49 @@ def record_audit_event(
     )
 
 
+def list_audit_events_filtered(
+    connection: sqlite3.Connection,
+    *,
+    event_type: str | None = None,
+    user_id: int | None = None,
+    limit: int = 200,
+) -> list[AuditEvent]:
+    conditions: list[str] = []
+    params: list[object] = []
+
+    if event_type is not None:
+        conditions.append("event_type = ?")
+        params.append(event_type)
+    if user_id is not None:
+        conditions.append("user_id = ?")
+        params.append(user_id)
+
+    where = ("WHERE " + " AND ".join(conditions)) if conditions else ""
+    params.append(max(1, min(limit, 1000)))
+
+    rows = connection.execute(
+        f"""
+        SELECT id, user_id, event_type, ip_address, user_agent, details
+        FROM audit_log
+        {where}
+        ORDER BY id DESC
+        LIMIT ?
+        """,
+        params,
+    ).fetchall()
+    return [
+        AuditEvent(
+            id=int(row[0]),
+            user_id=None if row[1] is None else int(row[1]),
+            event_type=str(row[2]),
+            ip_address=None if row[3] is None else str(row[3]),
+            user_agent=None if row[4] is None else str(row[4]),
+            details=json.loads(str(row[5])),
+        )
+        for row in rows
+    ]
+
+
 def list_audit_events(connection: sqlite3.Connection) -> list[AuditEvent]:
     rows = connection.execute(
         """

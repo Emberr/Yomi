@@ -14,6 +14,7 @@ INVITE_CODE_BYTES = 16
 class InviteRecord:
     code: str
     created_by: int | None
+    created_at: datetime | None
     expires_at: datetime | None
     is_admin_invite: bool
     used_by: int | None
@@ -41,10 +42,11 @@ def _invite_from_row(row: sqlite3.Row | tuple[object, ...]) -> InviteRecord:
     return InviteRecord(
         code=str(row[0]),
         created_by=None if row[1] is None else int(row[1]),
-        expires_at=_parse_optional_timestamp(row[2]),
-        is_admin_invite=bool(row[3]),
-        used_by=None if row[4] is None else int(row[4]),
-        used_at=_parse_optional_timestamp(row[5]),
+        created_at=_parse_optional_timestamp(row[2]),
+        expires_at=_parse_optional_timestamp(row[3]),
+        is_admin_invite=bool(row[4]),
+        used_by=None if row[5] is None else int(row[5]),
+        used_at=_parse_optional_timestamp(row[6]),
     )
 
 
@@ -83,7 +85,7 @@ def create_invite(
 def get_invite(connection: sqlite3.Connection, code: str) -> InviteRecord | None:
     row = connection.execute(
         """
-        SELECT code, created_by, expires_at, is_admin_invite, used_by, used_at
+        SELECT code, created_by, created_at, expires_at, is_admin_invite, used_by, used_at
         FROM invites
         WHERE code = ?
         """,
@@ -102,6 +104,25 @@ def validate_invite_for_registration(
     if invite.expires_at is not None and invite.expires_at <= _utc_now():
         return None
     return invite
+
+
+def list_all_invites(connection: sqlite3.Connection) -> list[InviteRecord]:
+    rows = connection.execute(
+        """
+        SELECT code, created_by, created_at, expires_at, is_admin_invite, used_by, used_at
+        FROM invites
+        ORDER BY rowid
+        """
+    ).fetchall()
+    return [_invite_from_row(row) for row in rows]
+
+
+def delete_invite(connection: sqlite3.Connection, code: str) -> bool:
+    cursor = connection.execute(
+        "DELETE FROM invites WHERE code = ? AND used_by IS NULL",
+        (code,),
+    )
+    return cursor.rowcount == 1
 
 
 def mark_invite_used(

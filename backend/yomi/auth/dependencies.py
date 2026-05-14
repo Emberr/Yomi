@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from fastapi import HTTPException, Request, status
+from fastapi import Depends, HTTPException, Request, status
 
 from yomi.auth.sessions import SESSION_COOKIE_NAME, SessionRecord, get_valid_session
 from yomi.db.sqlite import open_user_db
@@ -40,3 +40,12 @@ def get_current_auth(request: Request) -> AuthenticatedUser:
 
 def get_current_user(request: Request) -> UserRecord:
     return get_current_auth(request).user
+
+
+def get_current_admin(auth: AuthenticatedUser = Depends(get_current_auth)) -> UserRecord:
+    if not auth.user.is_admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin access required",
+        )
+    return auth.user
