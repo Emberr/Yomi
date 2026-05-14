@@ -137,7 +137,7 @@ function VocabItemRow({ item }: VocabItemRowProps) {
                 onClick={() => void handlePractice()}
                 type="button"
               >
-                {practiceState === "pending" ? "Adding…" : "Add to deck"}
+                {practiceState === "pending" ? "Adding…" : "Add to review queue"}
               </button>
             )}
             {practiceState === "error" && practiceError && (

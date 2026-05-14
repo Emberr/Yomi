@@ -10,7 +10,7 @@ const NAV_ITEMS = [
   { label: "Dashboard", href: "/", active: true },
   { label: "Grammar", href: "/grammar", active: true },
   { label: "Vocabulary", href: "/vocabulary", active: true },
-  { label: "Review", active: false },
+  { label: "Review", href: "/review", active: true },
   { label: "Kanji", active: false },
   { label: "Settings", active: false },
 ] as const;

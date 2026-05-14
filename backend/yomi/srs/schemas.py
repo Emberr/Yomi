@@ -35,6 +35,13 @@ class CardResponse(BaseModel):
     due: str
     created_at: str
     suspended: bool
+    display_prompt: str | None = None
+    display_answer: str | None = None
+    # Grammar enrichment
+    display_formation: str | None = None
+    display_sentences: list[dict[str, str]] | None = None
+    # Vocab enrichment
+    display_readings: list[str] | None = None
 
 
 class ReviewResponse(BaseModel):

@@ -204,6 +204,12 @@ export interface VocabDetail {
 
 // ── SRS types ─────────────────────────────────────────────────────────────────
 
+export interface CardSentence {
+  japanese: string;
+  reading: string;
+  translation: string;
+}
+
 export interface SrsCard {
   id: number;
   user_id: number;
@@ -212,6 +218,19 @@ export interface SrsCard {
   content_table: string;
   state: string;
   due: string;
+  display_prompt: string | null;
+  display_answer: string | null;
+  display_formation: string | null;
+  display_sentences: CardSentence[] | null;
+  display_readings: string[] | null;
+}
+
+export interface ReviewResult {
+  card_id: number;
+  state: string;
+  due: string;
+  stability: number | null;
+  difficulty: number | null;
 }
 
 // ── Grammar API calls ─────────────────────────────────────────────────────────
@@ -285,4 +304,25 @@ export async function apiCreateSrsCard(payload: {
   const json: unknown = await res.json();
   if (!res.ok) return { ok: false, error: extractError(json) };
   return { ok: true, data: (json as { data: SrsCard }).data };
+}
+
+export async function apiGetDueCards(): Promise<ApiResult<SrsCard[]>> {
+  const res = await apiFetch("/srs/due");
+  const json: unknown = await res.json();
+  if (!res.ok) return { ok: false, error: extractError(json) };
+  return { ok: true, data: (json as { data: SrsCard[] }).data };
+}
+
+export async function apiSubmitReview(payload: {
+  card_id: number;
+  rating: 1 | 2 | 3 | 4;
+  time_taken_ms?: number;
+}): Promise<ApiResult<ReviewResult>> {
+  const res = await apiFetch("/srs/review", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+  const json: unknown = await res.json();
+  if (!res.ok) return { ok: false, error: extractError(json) };
+  return { ok: true, data: (json as { data: ReviewResult }).data };
 }

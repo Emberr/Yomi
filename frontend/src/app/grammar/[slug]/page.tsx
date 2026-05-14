@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/contexts/auth-context";
 import {
   apiCreateSrsCard,
@@ -15,11 +15,14 @@ import { Furigana } from "@/components/furigana";
 import { JlptBadge } from "@/components/jlpt-badge";
 import { TtsButton } from "@/components/tts-button";
 
-export default function GrammarDetailPage() {
+// ── Inner component (reads searchParams, safe inside Suspense) ────────────────
+
+function GrammarDetailInner({ slug }: { slug: string }) {
   const { auth } = useAuth();
   const router = useRouter();
-  const params = useParams<{ slug: string }>();
-  const slug = params.slug;
+  const searchParams = useSearchParams();
+  const fromLevel = searchParams.get("from");
+  const backHref = fromLevel ? `/grammar?level=${fromLevel}` : "/grammar";
 
   const [grammar, setGrammar] = useState<GrammarDetail | null>(null);
   const [sentences, setSentences] = useState<ExampleSentence[]>([]);
@@ -30,6 +33,8 @@ export default function GrammarDetailPage() {
   >("idle");
   const [practiceError, setPracticeError] = useState<string | null>(null);
 
+  const loadIdRef = useRef(0);
+
   useEffect(() => {
     if (auth.status === "unauthenticated") {
       router.replace("/login");
@@ -38,6 +43,7 @@ export default function GrammarDetailPage() {
 
   const load = useCallback(async () => {
     if (!slug) return;
+    const myId = ++loadIdRef.current;
     setLoading(true);
     setError(null);
     try {
@@ -45,6 +51,7 @@ export default function GrammarDetailPage() {
         apiGetGrammar(slug),
         apiGetGrammarSentences(slug),
       ]);
+      if (myId !== loadIdRef.current) return;
       if (!gRes.ok) {
         setError(gRes.error);
       } else {
@@ -52,9 +59,10 @@ export default function GrammarDetailPage() {
         setSentences(sRes.ok ? sRes.data : []);
       }
     } catch {
+      if (myId !== loadIdRef.current) return;
       setError("Failed to load. Check your connection and try again.");
     } finally {
-      setLoading(false);
+      if (myId === loadIdRef.current) setLoading(false);
     }
   }, [slug]);
 
@@ -113,7 +121,7 @@ export default function GrammarDetailPage() {
         </header>
         <div className="content-error">
           {error ?? "Grammar point not found."}
-          <Link className="back-link" href="/grammar">
+          <Link className="back-link" href={backHref}>
             ← Back to grammar list
           </Link>
         </div>
@@ -125,7 +133,7 @@ export default function GrammarDetailPage() {
     <>
       <header className="topbar">
         <div className="topbar-left">
-          <Link className="back-link" href="/grammar">
+          <Link className="back-link" href={backHref}>
             ← Grammar
           </Link>
           <h1 className="page-title" lang="ja">
@@ -219,5 +227,25 @@ export default function GrammarDetailPage() {
         </section>
       </div>
     </>
+  );
+}
+
+// ── Page export — wraps inner in Suspense for useSearchParams ─────────────────
+
+export default function GrammarDetailPage() {
+  const params = useParams<{ slug: string }>();
+  return (
+    <Suspense
+      fallback={
+        <>
+          <header className="topbar">
+            <h1 className="page-title">Grammar</h1>
+          </header>
+          <div className="content-loading">Loading…</div>
+        </>
+      }
+    >
+      <GrammarDetailInner slug={params.slug} />
+    </Suspense>
   );
 }
