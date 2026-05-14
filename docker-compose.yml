@@ -45,6 +45,7 @@ services:
     container_name: yomi_ingestion
     environment:
       DB_CONTENT_PATH: /data/content.db
+      SOURCES_DIR: /data/sources
     volumes:
       - yomi_data:/data
     profiles:
